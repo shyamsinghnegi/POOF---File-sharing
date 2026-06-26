@@ -37,6 +37,7 @@ export default function UploadForm() {
     const [showErrorToast, setShowErrorToast] = useState(false);
     const [showComingSoonToast, setShowComingSoonToast] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const pickedFilesRef = useRef<File[]>([]);
 
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
 
@@ -81,6 +82,7 @@ export default function UploadForm() {
         setCopied(false);
         setFakeProgress(0);
         setShowErrorToast(false);
+        pickedFilesRef.current = [];
     }
 
     async function handleCopy() {
@@ -91,11 +93,7 @@ export default function UploadForm() {
         setTimeout(() => setCopied(false), 2000);
     }
 
-    async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const selected = event.target.files;
-        if (!selected || selected.length === 0) return;
-
-        const pickedFiles = Array.from(selected);
+    async function uploadFiles(pickedFiles: File[]) {
         setFiles(pickedFiles.map((f) => ({ name: f.name, size: f.size })));
         setFakeProgress(0);
         setStage("uploading");
@@ -182,7 +180,20 @@ export default function UploadForm() {
             setShowErrorToast(true);
             setStage("error");
         }
+    }
+
+    async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const selected = event.target.files;
+        if (!selected || selected.length === 0) return;
+
+        const pickedFiles = Array.from(selected);
+        pickedFilesRef.current = pickedFiles;
         event.target.value = "";
+        await uploadFiles(pickedFiles);
+    }
+
+    function handleRetry() {
+        uploadFiles(pickedFilesRef.current);
     }
 
     const fileInput = (
@@ -231,9 +242,16 @@ export default function UploadForm() {
                 {copied && <Toast message="Link copied" />}
                 {stage === "error" && errorMessage && showErrorToast && <Toast message={errorMessage} />}
 
-                <button onClick={reset} className={styles.backButton}>
-                    ← {stage === "done" ? "Upload another file" : "Back"}
-                </button>
+                <div className={styles.fileRowWrapper}>
+                    {stage === "error" && (
+                        <button onClick={handleRetry} className={styles.primaryButton}>
+                            Retry
+                        </button>
+                    )}
+                    <button onClick={reset} className={styles.backButton}>
+                        ← {stage === "done" ? "Upload another file" : "Back"}
+                    </button>
+                </div>
             </>
         );
     }
