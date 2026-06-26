@@ -31,7 +31,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
     if (isExpired) {
         return (<div className={styles.page}>
-            <Header />
+            <Header variant="faq" />
             <main className={styles.main}>
                 <p className={styles.gone}>This link is gone.</p>
             </main>
@@ -43,7 +43,7 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
 
     return (
         <div className={styles.page}>
-            <Header />
+            <Header variant="faq" />
             <main className={styles.main}>
                 <h1 className={styles.title}>Download your file{files.length > 1 ? "s" : ""}</h1>
                 <p className={styles.subtitle}>Shared via poof.</p>
