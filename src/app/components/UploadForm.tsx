@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import styles from "./UploadForm.module.css";
+import ShareIcon from "./ShareIcon";
+import Toast from "./Toast";
 
 type Stage = "idle" | "uploading" | "done" | "error";
 
@@ -26,6 +27,8 @@ export default function UploadForm() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [fakeProgress, setFakeProgress] = useState(0);
+    const [showErrorToast, setShowErrorToast] = useState(false);
+    const [showComingSoonToast, setShowComingSoonToast] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
@@ -47,6 +50,18 @@ export default function UploadForm() {
         return () => clearInterval(interval);
     }, [stage, totalSize]);
 
+    useEffect(() => {
+        if (stage !== "error") return;
+        const timeout = setTimeout(() => setShowErrorToast(false), 4000);
+        return () => clearTimeout(timeout);
+    }, [stage, errorMessage]);
+
+    useEffect(() => {
+        if (!showComingSoonToast) return;
+        const timeout = setTimeout(() => setShowComingSoonToast(false), 3000);
+        return () => clearTimeout(timeout);
+    }, [showComingSoonToast]);
+
     function handlePickClick() {
         fileInputRef.current?.click();
     }
@@ -58,6 +73,7 @@ export default function UploadForm() {
         setErrorMessage(null);
         setCopied(false);
         setFakeProgress(0);
+        setShowErrorToast(false);
     }
 
     async function handleCopy() {
@@ -89,6 +105,7 @@ export default function UploadForm() {
 
             if (!response.ok) {
                 setErrorMessage(data.error ?? "Upload failed.");
+                setShowErrorToast(true);
                 setStage("error");
                 return;
             }
@@ -104,6 +121,7 @@ export default function UploadForm() {
 
             if (!data.shareId) {
                 setErrorMessage("All files failed validation.");
+                setShowErrorToast(true);
                 setStage("error");
                 return;
             }
@@ -112,6 +130,7 @@ export default function UploadForm() {
             setStage("done");
         } catch {
             setErrorMessage("Something went wrong. Please try again.");
+            setShowErrorToast(true);
             setStage("error");
         }
         event.target.value = "";
@@ -155,12 +174,13 @@ export default function UploadForm() {
                     </div>
                     {stage === "done" && (
                         <button onClick={handleCopy} aria-label="Copy link" className={styles.shareButton}>
-                            {copied ? "✓" : "⇪"}
+                            <ShareIcon />
                         </button>
                     )}
                 </div>
 
-                {stage === "error" && <p className={styles.errorText}>{errorMessage}</p>}
+                {copied && <Toast message="Link copied" />}
+                {stage === "error" && errorMessage && showErrorToast && <Toast message={errorMessage} />}
 
                 <button onClick={reset} className={styles.backButton}>
                     ← {stage === "done" ? "Upload another file" : "Back"}
@@ -174,8 +194,9 @@ export default function UploadForm() {
             {fileInput}
             <div className={styles.buttonRow}>
                 <button onClick={handlePickClick} className={styles.primaryButton}>Upload File</button>
-                <Link href="#" className={styles.secondaryButton}>Remote Upload</Link>
+                <button onClick={() => setShowComingSoonToast(true)} className={styles.secondaryButton}>Remote Upload</button>
             </div>
+            {showComingSoonToast && <Toast message="Remote Upload coming soon" />}
         </>
     );
 }

@@ -35,6 +35,8 @@
 .row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
     padding: 16px 20px;
     border-bottom: 2px dashed var(--border);
 }
@@ -45,10 +47,15 @@
 
 .label {
     font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .value {
     color: var(--muted);
+    flex: none;
 }
 
 .warning {

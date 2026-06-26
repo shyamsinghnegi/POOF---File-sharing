@@ -47,6 +47,7 @@
 
 .fileRow {
     flex: 1;
+    min-width: 0;
     border: 2px dashed var(--border);
     padding: 16px 20px;
     text-align: left;

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import styles from "./CopyLinkButton.module.css";
+import ShareIcon from "./ShareIcon";
+import Toast from "./Toast";
 
 export default function CopyLinkButton({ shareId }: { shareId: string }) {
     const [copied, setCopied] = useState(false);
@@ -14,8 +16,13 @@ export default function CopyLinkButton({ shareId }: { shareId: string }) {
     }
 
     return (
-        <button onClick={handleCopy} className={styles.copyButton}>
-            {copied ? "Link copied" : "Copy link"}
-        </button>
+        <>
+            <button onClick={handleCopy} className={styles.copyButton}>
+                <ShareIcon />
+                Copy link
+            </button>
+            {copied && <Toast message="Link copied" />}
+        </>
     );
 }
+    

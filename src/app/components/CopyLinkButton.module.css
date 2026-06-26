@@ -13,4 +13,8 @@
     cursor: pointer;
     margin-top: 14px;
     font-family: var(--font-space-mono), monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }

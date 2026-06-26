@@ -7,6 +7,7 @@ import { getFileByHash, insertFile, insertShare, insertShareFile, getTotalStorag
 
 //File Validation and values
 const MAX_FILE_SIZE = 1024 * 1024 * 1024; //1GB LIMIT
+const MAX_BATCH_SIZE = 2 * 1024 * 1024 * 1024; // 2GB total for multi-file batches
 const STORAGE_BUDGET = 10 * 1024 * 1024 * 1024; // 10GB total budget
 const KILL_SWITCH_THRESHOLD = STORAGE_BUDGET * 0.8; // 8GB — reject uploads past this
 
@@ -30,15 +31,23 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    const fileList = files as File[];
+
+    if (fileList.length === 1) {
+        if (fileList[0].size > MAX_FILE_SIZE) {
+            return NextResponse.json({ error: "File exceeds 1GB limit" }, { status: 413 });
+        }
+    } else {
+        const totalRequestedSize = fileList.reduce((sum, f) => sum + f.size, 0);
+        if (totalRequestedSize > MAX_BATCH_SIZE) {
+            return NextResponse.json({ error: "Batch exceeds 2GB total limit" }, { status: 413 });
+        }
+    }
+
     const results: FileResult[] = [];
     const successfulFiles: { hash: string; filename: string }[] = [];
 
-    for (const file of files as File[]) {
-        if (file.size > MAX_FILE_SIZE) {
-            results.push({ filename: file.name, status: "failed", reason: "Exceeds 1GB limit" });
-            continue;
-        }
-
+    for (const file of fileList) {
         const totalStorageUsed = await getTotalStorageUsed();
         if (totalStorageUsed + file.size > KILL_SWITCH_THRESHOLD) {
             results.push({ filename: file.name, status: "failed", reason: "Storage limit reached" });

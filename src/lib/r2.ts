@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { Readable } from "stream";
 
 const r2Client = new S3Client({
     region: "auto",
@@ -14,8 +15,9 @@ export async function uploadToR2(key: string, body: Buffer, contentType: string)
         new PutObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
             Key: key,
-            Body: body,
+            Body: Readable.from(body),
             ContentType: contentType,
+            ContentLength: body.length,
         })
     );
 }
