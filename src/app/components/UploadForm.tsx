@@ -6,6 +6,13 @@ import styles from "./UploadForm.module.css";
 
 type Stage = "idle" | "uploading" | "done" | "error";
 
+type FileEntry = {
+    name: string;
+    size: number;
+    status?: "ok" | "failed";
+    reason?: string;
+};
+
 function formatBytes(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -14,19 +21,20 @@ function formatBytes(bytes: number): string {
 
 export default function UploadForm() {
     const [stage, setStage] = useState<Stage>("idle");
-    const [fileName, setFileName] = useState("");
-    const [fileSize, setFileSize] = useState(0);
+    const [files, setFiles] = useState<FileEntry[]>([]);
     const [shareId, setShareId] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [fakeProgress, setFakeProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+
     useEffect(() => {
         if (stage !== "uploading") return;
 
         const assumedBytesPerSecond = 2 * 1024 * 1024; // rough assumption: ~2 MB/s
-        const estimatedSeconds = Math.max(fileSize / assumedBytesPerSecond, 2);
+        const estimatedSeconds = Math.max(totalSize / assumedBytesPerSecond, 2);
         const startTime = Date.now();
 
         const interval = setInterval(() => {
@@ -37,7 +45,7 @@ export default function UploadForm() {
         }, 200);
 
         return () => clearInterval(interval);
-    }, [stage, fileSize]);
+    }, [stage, totalSize]);
 
     function handlePickClick() {
         fileInputRef.current?.click();
@@ -45,6 +53,7 @@ export default function UploadForm() {
 
     function reset() {
         setStage("idle");
+        setFiles([]);
         setShareId(null);
         setErrorMessage(null);
         setCopied(false);
@@ -60,17 +69,19 @@ export default function UploadForm() {
     }
 
     async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        if (!file) return;
+        const selected = event.target.files;
+        if (!selected || selected.length === 0) return;
 
-        setFileName(file.name);
-        setFileSize(file.size);
+        const pickedFiles = Array.from(selected);
+        setFiles(pickedFiles.map((f) => ({ name: f.name, size: f.size })));
         setFakeProgress(0);
         setStage("uploading");
         setErrorMessage(null);
 
         const formData = new FormData();
-        formData.append("file", file);
+        for (const file of pickedFiles) {
+            formData.append("file", file);
+        }
 
         try {
             const response = await fetch("/api/upload", { method: "POST", body: formData });
@@ -82,7 +93,21 @@ export default function UploadForm() {
                 return;
             }
 
+            setFiles((current) =>
+                current.map((f) => {
+                    const result = data.results?.find((r: { filename: string }) => r.filename === f.name);
+                    return result ? { ...f, status: result.status, reason: result.reason } : f;
+                })
+            );
+
             setFakeProgress(100);
+
+            if (!data.shareId) {
+                setErrorMessage("All files failed validation.");
+                setStage("error");
+                return;
+            }
+
             setShareId(data.shareId);
             setStage("done");
         } catch {
@@ -96,26 +121,30 @@ export default function UploadForm() {
         <input
             ref={fileInputRef}
             type="file"
+            multiple
             onChange={handleFileChange}
             className={styles.hiddenInput}
         />
     );
 
     if (stage === "uploading" || stage === "done" || stage === "error") {
-        const barWidth = stage === "done" ? 100 : stage === "error" ? fakeProgress : fakeProgress;
         return (
             <>
                 {fileInput}
                 <div className={styles.fileRowWrapper}>
                     <div className={styles.fileRow}>
-                        <div className={styles.fileInfo}>
-                            <span className={styles.fileName}>{fileName}</span>
-                            <span className={styles.fileSize}>{formatBytes(fileSize)}</span>
-                        </div>
+                        {files.map((file) => (
+                            <div className={styles.fileInfo} key={file.name}>
+                                <span className={styles.fileName}>{file.name}</span>
+                                <span className={styles.fileSize}>
+                                    {file.status === "failed" ? file.reason : formatBytes(file.size)}
+                                </span>
+                            </div>
+                        ))}
                         <div className={styles.progressTrack}>
                             <div
                                 className={stage === "error" ? styles.progressBarError : styles.progressBarFill}
-                                style={{ width: `${barWidth}%` }}
+                                style={{ width: `${stage === "done" ? 100 : fakeProgress}%` }}
                             />
                         </div>
                         <div className={styles.fileStatus}>

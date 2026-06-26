@@ -55,17 +55,20 @@ export default async function SharePage({ params }: { params: Promise<{ id: stri
                             <span className={styles.value}>{formatBytes(file.size)}</span>
                         </div>
                     ))}
-                    <div className={styles.row}>
-                        <span className={styles.label}>Total size:</span>
-                        <span className={styles.value}>{formatBytes(totalSize)}</span>
+                </div>
+
+                <div className={styles.statsRow}>
+                    <div className={styles.statBox}>
+                        <span className={styles.statLabel}>Total size</span>
+                        <span className={styles.statValue}>{formatBytes(totalSize)}</span>
                     </div>
-                    <div className={styles.row}>
-                        <span className={styles.label}>Uploaded:</span>
-                        <span className={styles.value}>{formatUploadedDate(files[0].created_at)}</span>
+                    <div className={styles.statBox}>
+                        <span className={styles.statLabel}>Uploaded</span>
+                        <span className={styles.statValue}>{formatUploadedDate(files[0].created_at)}</span>
                     </div>
-                    <div className={styles.row}>
-                        <span className={styles.label}>Expires:</span>
-                        <span className={styles.value}>{formatTimeRemaining(files[0].expires_at, now)}</span>
+                    <div className={styles.statBox}>
+                        <span className={styles.statLabel}>Expires in</span>
+                        <span className={styles.statValue}>{formatTimeRemaining(files[0].expires_at, now)}</span>
                     </div>
                 </div>
 

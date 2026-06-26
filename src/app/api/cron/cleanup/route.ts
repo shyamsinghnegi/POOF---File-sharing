@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteExpiredShares, getOrphanedFiles, deleteFileByHash, getCurrentTime } from "@/lib/d1";
+import { deleteExpiredShares, getOrphanedFiles, deleteFileByHash, getCurrentTime, deleteExpiredShareFiles } from "@/lib/d1";
 import { deleteFromR2 } from "@/lib/r2";
 
 export async function GET(request: Request) {
@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     }
 
     const now = getCurrentTime();
+    await deleteExpiredShareFiles(now);
     await deleteExpiredShares(now);
 
     const orphanedFiles = await getOrphanedFiles();

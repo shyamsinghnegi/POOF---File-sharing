@@ -79,3 +79,32 @@
     font-size: 18px;
     color: var(--muted);
 }
+
+.statsRow {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 480px;
+    margin-top: 16px;
+}
+
+.statBox {
+    flex: 1;
+    border: 2px dashed var(--border);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.statLabel {
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.statValue {
+    font-size: 14px;
+}
